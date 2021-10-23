@@ -7,6 +7,7 @@ namespace App\Commands;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class CalculateSalaryPaymentDates extends Command
 {
@@ -33,9 +34,22 @@ class CalculateSalaryPaymentDates extends Command
 
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
-
-
         $output->writeln("The default file location is: " . $this->rootPath . "\\" . self::DEFAULT_FILE_LOCATION . self::DEFAULT_FILE_NAME);
+
+        $list = array (
+            array('aaa', 'bbb', 'ccc', 'ffff'),
+            array('123', '456', '789'),
+            array('"aaa"', '"bbb"')
+        );
+
+        $fp = fopen($this->rootPath . "\\" . self::DEFAULT_FILE_LOCATION . self::DEFAULT_FILE_NAME, 'w');
+
+        foreach ($list as $fields) {
+            fputcsv($fp, $fields);
+        }
+
+        fclose($fp);
+
         return 0;
     }
 }
