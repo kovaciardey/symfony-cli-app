@@ -4,6 +4,7 @@
 namespace App\Commands;
 
 
+use Cassandra\Date;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
@@ -15,6 +16,8 @@ class CalculateSalaryPaymentDates extends Command
 
     private const DEFAULT_FILE_LOCATION = 'command-output\\';
     private const DEFAULT_FILE_NAME = 'salary-dates.csv';
+
+    private const COLUMN_HEADINGS = ['Period', 'BasicPayment', 'BonusPayment'];
 
     private $rootPath;
 
@@ -36,16 +39,21 @@ class CalculateSalaryPaymentDates extends Command
     {
         $output->writeln("The default file location is: " . $this->rootPath . "\\" . self::DEFAULT_FILE_LOCATION . self::DEFAULT_FILE_NAME);
 
-        $list = array (
-            array('aaa', 'bbb', 'ccc', 'ffff'),
-            array('123', '456', '789'),
-            array('"aaa"', '"bbb"')
-        );
-
         $fp = fopen($this->rootPath . "\\" . self::DEFAULT_FILE_LOCATION . self::DEFAULT_FILE_NAME, 'w');
 
-        foreach ($list as $fields) {
-            fputcsv($fp, $fields);
+        fputcsv($fp, self::COLUMN_HEADINGS);
+
+        $testDate = date("Y-m-d", time());
+
+        dump($testDate);
+        dump(date("t", strtotime("+1 month", time())));
+        dump(date("Y-m-d", strtotime("+1 month", time())));
+
+
+        for($i = 0; $i < 12; $i++) {
+            $date = strtotime("+$i month", time());
+
+            fputcsv($fp, [date("M/y", $date), date("Y-m-D", $date), date("Y-m-l", $date)]);
         }
 
         fclose($fp);
