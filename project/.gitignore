@@ -1,4 +1,9 @@
 
+###> PHP Storm ###
+.idea/
+###< PHP Storm ###
+
+
 ###> symfony/framework-bundle ###
 /.env.local
 /.env.local.php
