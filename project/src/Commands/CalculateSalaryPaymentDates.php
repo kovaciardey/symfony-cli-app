@@ -19,6 +19,11 @@ class CalculateSalaryPaymentDates extends Command
 
     private const COLUMN_HEADINGS = ['Period', 'BasicPayment', 'BonusPayment'];
 
+    private const DEFAULT_DATE_FORMAT = "d-m-Y";
+    private const DEFAULT_PERIOD_FORMAT = "M/y";
+
+    private const DEBUG_DATE_FORMAT = "d-m-Y_D";
+
     private $rootPath;
 
     public function __construct(string $rootPath)
@@ -37,27 +42,47 @@ class CalculateSalaryPaymentDates extends Command
 
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
-        $output->writeln("The default file location is: " . $this->rootPath . "\\" . self::DEFAULT_FILE_LOCATION . self::DEFAULT_FILE_NAME);
+        $fileLocation = $this->rootPath . "\\" . self::DEFAULT_FILE_LOCATION . self::DEFAULT_FILE_NAME;
 
-        $fp = fopen($this->rootPath . "\\" . self::DEFAULT_FILE_LOCATION . self::DEFAULT_FILE_NAME, 'w');
+//        $output->writeln("The default file location is: " . $fileLocation);
+
+        $fp = fopen($fileLocation, 'w');
 
         fputcsv($fp, self::COLUMN_HEADINGS);
 
-        $testDate = date("Y-m-d", time());
-
-        dump($testDate);
-        dump(date("t", strtotime("+1 month", time())));
-        dump(date("Y-m-d", strtotime("+1 month", time())));
-
+        $firstDayOfCurrentMonth = new \DateTime(date("Y-m-01", time()));
 
         for($i = 0; $i < 12; $i++) {
-            $date = strtotime("+$i month", time());
+            fputcsv($fp, [$firstDayOfCurrentMonth->format(self::DEFAULT_PERIOD_FORMAT), $this->getLastWorkingDayOfDate($firstDayOfCurrentMonth)]);
 
-            fputcsv($fp, [date("M/y", $date), date("Y-m-D", $date), date("Y-m-l", $date)]);
+            $firstDayOfCurrentMonth->add(new \DateInterval('P1M')); // add 1 month to the date
         }
 
         fclose($fp);
 
         return 0;
+    }
+
+    private function getLastWorkingDayOfDate($date): string
+    {
+        $newDate = new \DateTime($date->format(self::DEFAULT_DATE_FORMAT));
+
+        $numberOfDays = $newDate->format("t");
+
+        $newDate->add(new \DateInterval('P' . ($numberOfDays - 1) . 'D'));
+
+        $dayNumber = $newDate->format("N");
+
+        if ($dayNumber == "6") // if Saturday get 1 day before
+        {
+            $newDate->sub(new \DateInterval('P1D'));
+        }
+        elseif ($dayNumber == "7") // if Sunday get 2 days before
+        {
+            $newDate->sub(new \DateInterval('P2D'));
+        }
+
+        return $newDate->format(self::DEFAULT_DATE_FORMAT);
+//        return $newDate->format(self::DEBUG_DATE_FORMAT);
     }
 }
