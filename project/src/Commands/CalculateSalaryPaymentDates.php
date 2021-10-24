@@ -8,7 +8,6 @@ use Cassandra\Date;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
-use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class CalculateSalaryPaymentDates extends Command
 {
@@ -22,7 +21,7 @@ class CalculateSalaryPaymentDates extends Command
     private const DEFAULT_DATE_FORMAT = "d-m-Y";
     private const DEFAULT_PERIOD_FORMAT = "M/y";
 
-    private const DEBUG_DATE_FORMAT = "d-m-Y_D";
+    private const DEBUG_DATE_FORMAT = "d-m-Y_D-N";
 
     private $rootPath;
 
@@ -53,7 +52,11 @@ class CalculateSalaryPaymentDates extends Command
         $firstDayOfCurrentMonth = new \DateTime(date("Y-m-01", time()));
 
         for($i = 0; $i < 12; $i++) {
-            fputcsv($fp, [$firstDayOfCurrentMonth->format(self::DEFAULT_PERIOD_FORMAT), $this->getLastWorkingDayOfDate($firstDayOfCurrentMonth)]);
+            fputcsv($fp, [
+                $firstDayOfCurrentMonth->format(self::DEFAULT_PERIOD_FORMAT),
+                $this->getLastWorkingDayOfDate($firstDayOfCurrentMonth),
+                $this->getSalaryBonusDate($firstDayOfCurrentMonth)
+            ]);
 
             $firstDayOfCurrentMonth->add(new \DateInterval('P1M')); // add 1 month to the date
         }
@@ -80,6 +83,26 @@ class CalculateSalaryPaymentDates extends Command
         elseif ($dayNumber == "7") // if Sunday get 2 days before
         {
             $newDate->sub(new \DateInterval('P2D'));
+        }
+
+        return $newDate->format(self::DEFAULT_DATE_FORMAT);
+//        return $newDate->format(self::DEBUG_DATE_FORMAT);
+    }
+
+    private function getSalaryBonusDate($date): string
+    {
+        $newDate = new \DateTime($date->format(self::DEFAULT_DATE_FORMAT));
+        $newDate->setDate($newDate->format('Y'), $newDate->format('m'), 10);
+
+        $dayNumber = $newDate->format("N");
+
+        if ($dayNumber == "6") // if Saturday add 2 days
+        {
+            $newDate->add(new \DateInterval('P2D'));
+        }
+        elseif ($dayNumber == "7") // if Sunday add 1 day
+        {
+            $newDate->add(new \DateInterval('P1D'));
         }
 
         return $newDate->format(self::DEFAULT_DATE_FORMAT);
